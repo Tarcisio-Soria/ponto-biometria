@@ -1,0 +1,27 @@
+# Instaladores e SDKs do fabricante (HID / DigitalPersona) — licença não permite redistribuir
+drivers/
+*.zip
+*.exe
+*.msi
+websdk.client.bundle.min.js
+modules/
+
+# Digitais e dados biométricos (dado pessoal sensível pela LGPD) — nunca publicar
+*.png
+*.jpg
+*.jpeg
+*.bmp
+*.tif
+*.tiff
+*.wsq
+*.fpt
+*.fmd
+*.ist
+*.json
+digitais/
+capturas/
+
+# Arquivos do sistema
+Thumbs.db
+desktop.ini
+.DS_Store

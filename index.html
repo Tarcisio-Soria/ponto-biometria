@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teste Leitor HID 4500</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --tx:#1d2330; --mut:#6b7280; --ok:#15803d; --err:#b91c1c; --warn:#b45309; --bd:#e5e7eb; --ac:#2563eb; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --tx:#e6e8eb; --mut:#9aa3ad; --bd:#2a313b; --ok:#4ade80; --err:#f87171; --warn:#fbbf24; --ac:#60a5fa; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--tx); font:15px/1.5 system-ui, Segoe UI, sans-serif; }
+  main { max-width:900px; margin:0 auto; padding:24px 16px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .sub { color:var(--mut); margin:0 0 20px; }
+  .card { background:var(--card); border:1px solid var(--bd); border-radius:10px; padding:16px; margin-bottom:16px; }
+  .card h2 { font-size:15px; margin:0 0 12px; }
+  .checks { list-style:none; padding:0; margin:0; }
+  .checks li { display:flex; gap:10px; padding:6px 0; border-bottom:1px dashed var(--bd); }
+  .checks li:last-child { border:0; }
+  .dot { width:10px; height:10px; border-radius:50%; margin-top:7px; flex:none; background:var(--mut); }
+  .ok .dot { background:var(--ok); } .err .dot { background:var(--err); } .warn .dot { background:var(--warn); }
+  .checks small { color:var(--mut); display:block; }
+  button { background:var(--ac); color:#fff; border:0; border-radius:8px; padding:9px 14px; font:inherit; cursor:pointer; margin:0 6px 6px 0; }
+  button.sec { background:transparent; color:var(--tx); border:1px solid var(--bd); }
+  button:disabled { opacity:.5; cursor:default; }
+  select { font:inherit; padding:8px; border-radius:8px; border:1px solid var(--bd); background:var(--card); color:var(--tx); }
+  #imgs { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; }
+  #imgs img { width:180px; border:1px solid var(--bd); border-radius:8px; background:#fff; }
+  #qual { font-weight:600; }
+  pre { background:var(--bg); border:1px solid var(--bd); border-radius:8px; padding:10px; max-height:300px; overflow:auto; font-size:12.5px; margin:0; white-space:pre-wrap; word-break:break-all; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Teste do leitor HID DigitalPersona 4500</h1>
+  <p class="sub">Diagnóstico e captura de digital pelo navegador.</p>
+
+  <section class="card">
+    <h2>1. Diagnóstico</h2>
+    <ul class="checks" id="checks"></ul>
+    <div style="margin-top:12px"><button class="sec" id="btnDiag">Rodar diagnóstico de novo</button></div>
+  </section>
+
+  <section class="card">
+    <h2>2. Captura</h2>
+    <label>Formato:
+      <select id="fmt">
+        <option value="PngImage">Imagem PNG (ver a digital)</option>
+        <option value="Intermediate">Intermediate (template para o servidor)</option>
+        <option value="Compressed">Compressed (WSQ)</option>
+        <option value="Raw">Raw</option>
+      </select>
+    </label>
+    <div style="margin-top:12px">
+      <button id="btnStart" disabled>Iniciar captura</button>
+      <button id="btnStop" class="sec" disabled>Parar</button>
+      <button id="btnList" class="sec" disabled>Listar leitores</button>
+    </div>
+    <p>Qualidade da última leitura: <span id="qual">—</span></p>
+    <div id="imgs"></div>
+  </section>
+
+  <section class="card">
+    <h2>3. Log</h2>
+    <pre id="log"></pre>
+  </section>
+</main>
+
+<script>
+  // Fontes possíveis do WebSdk (objeto global "WebSdk"), testadas em ordem.
+  window.WEBSDK_CANDIDATES = [
+    "websdk.client.bundle.min.js",            // arquivo local nesta pasta (preferido)
+    "modules/websdk/index.js",
+    "https://cdn.jsdelivr.net/npm/@digitalpersona/websdk",
+    "https://unpkg.com/@digitalpersona/websdk"
+  ];
+</script>
+
+<script type="module">
+const $ = s => document.querySelector(s);
+const logEl = $("#log");
+function log(msg, obj) {
+  const t = new Date().toLocaleTimeString();
+  logEl.textContent += `[${t}] ${msg}${obj !== undefined ? " " + safe(obj) : ""}\n`;
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function safe(o) { try { return typeof o === "string" ? o : JSON.stringify(o, null, 1).slice(0, 1500); } catch { return String(o); } }
+
+const checks = {};
+function check(id, title, state, detail = "") {
+  let li = checks[id];
+  if (!li) { li = document.createElement("li"); $("#checks").appendChild(li); checks[id] = li; }
+  li.className = state;
+  li.innerHTML = `<span class="dot"></span><div><b>${title}</b><small>${detail}</small></div>`;
+}
+
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = () => res(src); s.onerror = () => rej(new Error("falhou: " + src));
+    document.head.appendChild(s);
+  });
+}
+
+async function loadWebSdk() {
+  if (typeof window.WebSdk !== "undefined") return "já carregado";
+  for (const src of window.WEBSDK_CANDIDATES) {
+    try {
+      await loadScript(src);
+      if (typeof window.WebSdk !== "undefined") return src;
+      log("Script carregou mas não definiu WebSdk: " + src);
+    } catch (e) { log(e.message); }
+  }
+  throw new Error("WebSdk não encontrado");
+}
+
+function findDevices() {
+  const cands = [window.dp && window.dp.devices, window.devices, window["@digitalpersona/devices"]];
+  return cands.find(o => o && o.FingerprintReader);
+}
+
+async function loadDevicesUmd() {
+  // Versão "script tradicional": depende do WebSdk global e do @digitalpersona/core.
+  const groups = [
+    ["https://cdn.jsdelivr.net/npm/@digitalpersona/core@0.2.5/dist/es5.bundles/index.umd.min.js",
+     "https://cdn.jsdelivr.net/npm/@digitalpersona/devices@0.2.6/dist/es5.bundles/index.umd.min.js"],
+    ["https://cdn.jsdelivr.net/npm/@digitalpersona/core/dist/es5.bundles/index.umd.min.js",
+     "https://cdn.jsdelivr.net/npm/@digitalpersona/devices/dist/es5.bundles/index.umd.min.js"],
+    ["https://unpkg.com/@digitalpersona/core/dist/es5.bundles/index.umd.min.js",
+     "https://unpkg.com/@digitalpersona/devices/dist/es5.bundles/index.umd.min.js"]
+  ];
+  for (const g of groups) {
+    try {
+      for (const src of g) { await loadScript(src); log("Carregado: " + src); }
+      const lib = findDevices();
+      if (lib) return lib;
+      log("Scripts carregaram mas FingerprintReader não apareceu. Globais dp:", Object.keys(window.dp || {}));
+    } catch (e) { log(e.message); }
+  }
+  throw new Error("não foi possível carregar a versão UMD");
+}
+
+async function probeAgent() {
+  // O agente local da HID escuta em 127.0.0.1:52181 (HTTPS).
+  const ctl = new AbortController(); setTimeout(() => ctl.abort(), 4000);
+  try {
+    await fetch("https://127.0.0.1:52181/get_connection", { mode: "no-cors", signal: ctl.signal, cache: "no-store" });
+    return true;
+  } catch { return false; }
+}
+
+let reader = null, SampleFormat = null, libs = null;
+
+async function diagnose() {
+  $("#checks").innerHTML = ""; for (const k in checks) delete checks[k];
+  ["btnStart", "btnStop", "btnList"].forEach(id => $("#" + id).disabled = true);
+
+  // Contexto
+  const secure = window.isSecureContext || location.protocol === "file:";
+  check("ctx", "Página aberta em contexto adequado", secure ? "ok" : "warn",
+    `Endereço: ${location.protocol}//${location.host || "(arquivo local)"}`);
+
+  // Agente
+  check("agent", "Serviço local da HID (agente)", "", "verificando...");
+  const agentOk = await probeAgent();
+  check("agent", "Serviço local da HID (agente)", agentOk ? "ok" : "err",
+    agentOk ? "Respondeu em 127.0.0.1:52181."
+            : "Sem resposta em 127.0.0.1:52181. Instale/inicie o HID Authentication Device Client (DigitalPersona Lite Client). Se já estiver instalado, abra https://127.0.0.1:52181/get_connection numa aba para checar.");
+  log("Agente local: " + (agentOk ? "respondeu" : "sem resposta"));
+
+  // WebSdk
+  check("sdk", "Biblioteca WebSdk", "", "carregando...");
+  try {
+    const src = await loadWebSdk();
+    check("sdk", "Biblioteca WebSdk", "ok", "Carregada de: " + src);
+    log("WebSdk carregado de " + src);
+  } catch (e) {
+    check("sdk", "Biblioteca WebSdk", "err", "Não carregou. Coloque o arquivo websdk.client.bundle.min.js nesta pasta (vem no SDK da HID ou no repositório de exemplo).");
+    return;
+  }
+
+  // @digitalpersona/devices
+  check("lib", "Biblioteca @digitalpersona/devices", "", "carregando...");
+  try {
+    libs = libs || await loadDevicesUmd();
+    SampleFormat = libs.SampleFormat;
+    check("lib", "Biblioteca @digitalpersona/devices", "ok", "Carregada (UMD)");
+  } catch (e) {
+    check("lib", "Biblioteca @digitalpersona/devices", "err", "Falhou: " + e.message);
+    log("Erro ao carregar devices", e.message); return;
+  }
+
+  // Leitor
+  if (!reader) {
+    reader = new libs.FingerprintReader();
+    reader.on("DeviceConnected", e => { log("Leitor conectado", e); listDevices(); });
+    reader.on("DeviceDisconnected", e => { log("Leitor desconectado", e); listDevices(); });
+    reader.on("CommunicationFailed", e => { log("Falha de comunicação com o agente", e);
+      check("comm", "Comunicação com o agente", "err", "O WebSdk não conseguiu falar com o serviço local."); });
+    reader.on("QualityReported", e => { const q = libs.QualityCode ? libs.QualityCode[e.quality] : e.quality; $("#qual").textContent = q; log("Qualidade", q); });
+    reader.on("ErrorOccurred", e => log("ErrorOccurred", e));
+    reader.on("AcquisitionStarted", e => log("Captura iniciada — coloque o dedo no leitor", e));
+    reader.on("AcquisitionStopped", e => log("Captura parada", e));
+    reader.on("SamplesAcquired", onSamples);
+  }
+  await listDevices();
+}
+
+async function listDevices() {
+  check("dev", "Leitor de digital detectado", "", "procurando...");
+  try {
+    const devs = await reader.enumerateDevices();
+    log("Leitores encontrados", devs);
+    if (devs && devs.length) {
+      check("dev", "Leitor de digital detectado", "ok", `${devs.length} leitor(es): ${devs.join(", ")}`);
+      $("#btnStart").disabled = false;
+    } else {
+      check("dev", "Leitor de digital detectado", "err", "Nenhum leitor. Confira o cabo USB, o LED do leitor e o Gerenciador de Dispositivos do Windows.");
+    }
+    $("#btnList").disabled = false;
+  } catch (e) {
+    check("dev", "Leitor de digital detectado", "err", "Erro ao listar: " + (e.message || e));
+    log("Erro enumerateDevices", e.message || e);
+    $("#btnList").disabled = false;
+  }
+}
+
+function onSamples(e) {
+  log("Amostra recebida (formato " + e.sampleFormat + ")");
+  let samples = e.samples;
+  if (typeof samples === "string") { try { samples = JSON.parse(samples); } catch {} }
+  const arr = Array.isArray(samples) ? samples : [samples];
+  for (const s of arr) {
+    const data = typeof s === "string" ? s : (s && s.Data) || s;
+    if (e.sampleFormat === SampleFormat.PngImage && typeof data === "string") {
+      let b64 = data.replace(/-/g, "+").replace(/_/g, "/");
+      while (b64.length % 4) b64 += "=";
+      const img = new Image(); img.src = "data:image/png;base64," + b64; img.alt = "Digital capturada";
+      $("#imgs").prepend(img);
+    } else {
+      log("Dados (início):", String(typeof data === "string" ? data : safe(data)).slice(0, 200) + "...");
+    }
+  }
+}
+
+$("#btnStart").onclick = async () => {
+  try {
+    await reader.startAcquisition(SampleFormat[$("#fmt").value]);
+    $("#btnStart").disabled = true; $("#btnStop").disabled = false;
+  } catch (e) { log("Erro ao iniciar captura", e.message || e); }
+};
+$("#btnStop").onclick = async () => {
+  try { await reader.stopAcquisition(); } catch (e) { log("Erro ao parar", e.message || e); }
+  $("#btnStart").disabled = false; $("#btnStop").disabled = true;
+};
+$("#btnList").onclick = listDevices;
+$("#btnDiag").onclick = diagnose;
+
+diagnose();
+</script>
+</body>
+</html>
