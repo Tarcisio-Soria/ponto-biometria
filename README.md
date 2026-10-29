@@ -7,6 +7,16 @@ Duas páginas HTML, sem servidor e sem SDK pago, para:
 
 > ⚠️ **Projeto de teste e estudo.** Não é um sistema biométrico certificado. Não use para ponto eletrônico com valor legal, controle de acesso ou identificação de pacientes. Veja [Limitações](#limitações).
 
+## Telas
+
+**Teste do leitor (`index.html`):** passo a passo de instalação e diagnóstico.
+
+![Passo a passo de instalação e diagnóstico do leitor](docs/prints/01-passo-a-passo.png)
+
+**Comparador (`comparador.html`):** cadastro do dedo, testes e calibração da nota mínima.
+
+![Tela do comparador de digitais](docs/prints/02-comparador.png)
+
 ## O que você precisa
 
 - Windows com o leitor **HID DigitalPersona 4500** (ou U.are.U 4500) no USB.
@@ -22,7 +32,7 @@ Os instaladores do fabricante **não fazem parte deste repositório**, porque a 
 
 1. Instale o driver e o HID Authentication Device Client e reinicie o PC.
 2. Abra `https://127.0.0.1:52181/get_connection` numa aba. Se o navegador avisar sobre o certificado, aceite. Isso só precisa ser feito uma vez.
-3. Abra o `index.html` (duplo clique ou arrastando para o navegador).
+3. Abra o `index.html` (duplo clique ou arrastando para o navegador). A própria página tem esse passo a passo, que se recolhe sozinho quando o leitor é detectado.
 4. O diagnóstico mostra, em verde ou vermelho: o agente da HID, as bibliotecas e o leitor.
 5. Escolha o formato **PNG**, clique em **Iniciar captura** e encoste o dedo.
 

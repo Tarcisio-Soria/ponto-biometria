@@ -21,6 +21,9 @@ modules/
 digitais/
 capturas/
 
+# Exceção: prints das telas do sistema (confira antes que nenhum mostra digital)
+!docs/prints/*.png
+
 # Arquivos do sistema
 Thumbs.db
 desktop.ini

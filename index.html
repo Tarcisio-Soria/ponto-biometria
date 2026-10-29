@@ -28,6 +28,12 @@
   #imgs img { width:180px; border:1px solid var(--bd); border-radius:8px; background:#fff; }
   #qual { font-weight:600; }
   pre { background:var(--bg); border:1px solid var(--bd); border-radius:8px; padding:10px; max-height:300px; overflow:auto; font-size:12.5px; margin:0; white-space:pre-wrap; word-break:break-all; }
+  a { color:var(--ac); }
+  details.card summary { cursor:pointer; font-weight:600; font-size:15px; }
+  ol.passos { margin:12px 0 0; padding-left:22px; }
+  ol.passos li { margin-bottom:12px; }
+  ol.passos small { color:var(--mut); display:block; }
+  code { background:var(--bg); border:1px solid var(--bd); border-radius:4px; padding:1px 5px; font-size:13px; }
   footer { color:var(--mut); font-size:13px; text-align:center; padding:8px 0 24px; }
   footer a { color:var(--ac); }
 </style>
@@ -36,6 +42,22 @@
 <main>
   <h1>Teste do leitor HID DigitalPersona 4500</h1>
   <p class="sub">Diagnóstico e captura de digital pelo navegador.</p>
+
+  <details class="card" id="guia" open>
+    <summary>Primeira vez? Passo a passo de instalação</summary>
+    <ol class="passos">
+      <li><b>Conecte o leitor no USB.</b>
+        <small>O LED do leitor deve acender. Abra o Gerenciador de Dispositivos do Windows: se aparecer em "Dispositivos biométricos", o driver já está instalado e você pode pular o passo 2.</small></li>
+      <li><b>Instale o driver do leitor (só se precisar).</b>
+        <small>Procure no site da HID Global (Suporte → Downloads) por "DP4500 Fingerprint Reader Driver". Instale e reconecte o leitor.</small></li>
+      <li><b>Instale o HID Authentication Device Client.</b>
+        <small>Também no site da HID Global (às vezes chamado de "DigitalPersona Lite Client"). É ele que deixa o navegador conversar com o leitor. Reinicie o computador depois.</small></li>
+      <li><b>Autorize a conexão local (só uma vez).</b>
+        <small>Abra <a href="https://127.0.0.1:52181/get_connection" target="_blank" rel="noopener"><code>https://127.0.0.1:52181/get_connection</code></a> numa aba. Se o navegador avisar sobre o certificado, clique em "Avançado" e depois em "Continuar". Volte para esta página.</small></li>
+      <li><b>Rode o diagnóstico abaixo.</b>
+        <small>Tudo verde: clique em "Iniciar captura" e encoste o dedo. Quando funcionar aqui, abra o <a href="comparador.html">comparador</a>.</small></li>
+    </ol>
+  </details>
 
   <section class="card">
     <h2>1. Diagnóstico</h2>
@@ -176,6 +198,7 @@ async function diagnose() {
     agentOk ? "Respondeu em 127.0.0.1:52181."
             : "Sem resposta em 127.0.0.1:52181. Instale/inicie o HID Authentication Device Client (DigitalPersona Lite Client). Se já estiver instalado, abra https://127.0.0.1:52181/get_connection numa aba para checar.");
   log("Agente local: " + (agentOk ? "respondeu" : "sem resposta"));
+  if (!agentOk) $("#guia").open = true;
 
   // WebSdk
   check("sdk", "Biblioteca WebSdk", "", "carregando...");
@@ -223,6 +246,7 @@ async function listDevices() {
     if (devs && devs.length) {
       check("dev", "Leitor de digital detectado", "ok", `${devs.length} leitor(es): ${devs.join(", ")}`);
       $("#btnStart").disabled = false;
+      $("#guia").open = false; // tudo pronto: recolhe o passo a passo
     } else {
       check("dev", "Leitor de digital detectado", "err", "Nenhum leitor. Confira o cabo USB, o LED do leitor e o Gerenciador de Dispositivos do Windows.");
     }
