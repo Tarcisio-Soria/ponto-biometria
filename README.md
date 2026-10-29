@@ -20,8 +20,8 @@ Duas páginas HTML, sem servidor e sem SDK pago, para:
 ## O que você precisa
 
 - Windows com o leitor **HID DigitalPersona 4500** (ou U.are.U 4500) no USB.
-- **Driver do leitor**: "DP4500 Fingerprint Reader Driver", disponível no site da HID Global (área de downloads da DigitalPersona).
-- **HID Authentication Device Client** (também chamado de *DigitalPersona Lite Client*), do mesmo site. É o programa que deixa o navegador conversar com o leitor. Ele fica rodando em `https://127.0.0.1:52181`.
+- **Driver do leitor** (só se o Windows não reconhecer o leitor): [DP4500 Fingerprint Reader Driver (Legacy) v4.1.1.221](https://www.hidglobal.com/drivers/49061), no site da HID Global. O arquivo baixado é `SFW-02580-DP4500 Fingerprint Reader Driver (Legacy) with installer v.4.1.1.221.zip`.
+- **HID Authentication Device Client** v5.2.0, também chamado de *DigitalPersona Lite Client*: [download direto](https://crossmatch.hid.gl/lite-client/store/5.2.0/HID%20Authentication%20Device%20Client.exe) ou [página oficial](https://crossmatch.hid.gl/lite-client/). É o programa que deixa o navegador conversar com o leitor. Ele fica rodando em `https://127.0.0.1:52181`.
 - Chrome ou Edge, com internet na primeira vez (as bibliotecas são baixadas de CDN).
 
 Os instaladores do fabricante **não fazem parte deste repositório**, porque a licença deles não permite redistribuição. Baixe sempre do site oficial.
