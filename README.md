@@ -57,6 +57,13 @@ Biometria é **dado pessoal sensível** (LGPD, art. 5º, II). Estas páginas **n
 
 Se você adaptar o código para guardar digitais, precisa de base legal, consentimento e armazenamento seguro. **Nunca** coloque imagens ou templates de digitais neste repositório. O `.gitignore` já bloqueia os formatos mais comuns.
 
+## Autor
+
+**Tarcisio Soria**, executivo médico, healthtech e arquiteto de sistemas.
+[GitHub](https://github.com/Tarcisio-Soria) · [LinkedIn](https://www.linkedin.com/in/kknd/) · [kknd.com.br](https://kknd.com.br)
+
+Se usar ou adaptar este projeto, mantenha o crédito ao autor.
+
 ## Licença
 
 MIT. Veja [LICENSE](LICENSE). As bibliotecas usadas (DigitalPersona WebSdk/devices e OpenCV.js) têm licenças próprias.
